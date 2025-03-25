@@ -1,4 +1,4 @@
-# Regeneration Credit
+# Sintrop OS Apps
 Sintrop OS Apps and core contracts.
 
 ## Project introduction 
