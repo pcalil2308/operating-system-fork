@@ -7,7 +7,7 @@ describe("EducationCenter", () => {
   let owner, user1Address, user2Address;
 
   const addContent = async (from) => {
-    await instance.connect(from).addContent("id", "title", "description",  "fileURL", "photo");
+    await instance.connect(from).addContent("id", "title", "description", "fileURL", "photo");
   };
 
   beforeEach(async () => {
@@ -18,12 +18,10 @@ describe("EducationCenter", () => {
   });
 
   describe("addContent", () => {
-    it("must add content", async () => {
-    });
+    it("must add content", async () => {});
   });
 
   describe("getContent", () => {
-    it("must get content", async () => {
-    });
-  });  
+    it("must get content", async () => {});
+  });
 });
