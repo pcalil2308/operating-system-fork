@@ -1,0 +1,25 @@
+version: '3.6'
+
+services:
+  sintrop-app:
+    container_name: SINTROP-OS-APPS
+    command: ["sleep", "infinity"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: 
+      - 8546:8546
+      - 5001:5001
+      - 8080:8080
+    networks: 
+      - app-tunnel
+    volumes: 
+      - ./:/app
+  eth-security-toolbox:
+    container_name: ETH-SECURITY-TOOLBOX2
+    image: trailofbits/eth-security-toolbox
+    networks: 
+      - app-tunnel
+networks: 
+  app-tunnel:
+    driver: bridge

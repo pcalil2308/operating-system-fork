@@ -1,0 +1,54 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main, release ]
+  pull_request:
+    branches: [ main, release ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  
+env:
+
+jobs:
+
+  Specs:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup NodeJS 20
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+      - name: Show NodeJS version  
+        run: npm --version
+      - name: Instal Packages
+        run: npm install
+      - name: Run Specs
+        run: npm run test
+
+  Code_Quality:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup NodeJS 20
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+      - name: Install Dependencies
+        run: npm install
+      - name: Run Solhint
+        run: npx solhint **/*.sol
+      - name: Run Prettier
+        run: npx prettier -c test/
