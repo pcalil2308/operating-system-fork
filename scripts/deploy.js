@@ -7,6 +7,7 @@
 const hre = require("hardhat");
 var fs = require("fs");
 const educationCenterDeploy = require("../migrations/1_educationCenter.deploy.js");
+const sintropAppStoreDeploy = require("../migrations/2_sintropAppStore.deploy.js");
 
 const sleep = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
 
