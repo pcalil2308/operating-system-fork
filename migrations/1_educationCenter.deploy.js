@@ -3,11 +3,11 @@ const verifyContract = require("../scripts/shared/verifyContract");
 
 async function educationCenterDeploy() {
 
-  const EducationCenter = await ethers.getContractFactory("EducationCenter");
+  const FreeEducationCenter = await ethers.getContractFactory("FreeEducationCenter");
 
-  const educationCenter = await EducationCenter.deploy();
+  const educationCenter = await FreeEducationCenter.deploy();
 
-  saveContractAddress("EducationCenter", educationCenter.target);
+  saveContractAddress("FreeEducationCenter", educationCenter.target);
 
   console.log(`EducationCenter address ${educationCenter.target}`);
 
