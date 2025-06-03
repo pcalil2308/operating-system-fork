@@ -48,6 +48,7 @@ async function main() {
   await startDeployAlert();
 
   await educationCenterDeploy();
+  await sintropAppStoreDeploy();
 
 //  await afterDeploy();
 
