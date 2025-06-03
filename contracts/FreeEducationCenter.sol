@@ -43,9 +43,6 @@ contract FreeEducationCenter {
         address indexed publisher
     );
 
-    // --- Constructor ---
-    // (No explicit constructor needed as there are no initial state variables to set other than default values)
-
     // --- Public Functions ---
 
     /**
