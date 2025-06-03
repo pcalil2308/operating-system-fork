@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 /**
  * @title SintropAppStore v.1.0.0
- * @author Sintrop (Refined by Gemini)
+ * @author Sintrop
  * @notice A decentralized appStore for listing impact smart contract applications,
  * with a focus on evaluating their socio-environmental impact.
  * @dev This contract allows users to register DApps, vote on their impact, and determine their approval status dynamically.
