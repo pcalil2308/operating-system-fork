@@ -3,7 +3,7 @@ pragma solidity >=0.8.2 <0.9.0; // Pragma remains the same, good choice
 
 /**
  * @title Free Education Center
- * @author Sintrop (Refined by Gemini)
+ * @author Sintrop
  * @notice A decentralized platform for users to publish and access free educational content.
  * @dev This contract manages the storage and retrieval of content entries, each identified by a unique ID.
  * It emphasizes public access and user contribution.

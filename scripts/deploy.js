@@ -8,6 +8,7 @@ const hre = require("hardhat");
 var fs = require("fs");
 const educationCenterDeploy = require("../migrations/1_educationCenter.deploy.js");
 const sintropAppStoreDeploy = require("../migrations/2_sintropAppStore.deploy.js");
+const globalPlantCatalogDeploy = require("../migrations/3_globalPlantCatalog.js");
 
 const sleep = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -49,6 +50,7 @@ async function main() {
 
   await educationCenterDeploy();
   await sintropAppStoreDeploy();
+  await globalPlantCatalogDeploy();
 
 //  await afterDeploy();
 
