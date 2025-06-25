@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.8.2 <0.9.0; // Pragma remains the same, good choice
+pragma solidity >=0.8.2 <0.9.0;
 
 /**
  * @title Free Education Center

@@ -4,12 +4,12 @@ pragma solidity ^0.8.0;
 /**
  * @title GlobalPlantCatalog
  * @author Sintrop
- * @notice A global and immutable catalog of plants and trees registered on the blockchain.
+ * @notice A global and open catalog of plants and trees registered on the blockchain.
  * @dev This contract allows any user to add detailed information about plants,
  * storing it in a decentralized manner and associating it with the creator.
  * Image data (photos) are stored as hashes/URLs for off-chain content (e.g., IPFS).
  */
-contract GlobalPlantCatalog { // Contract name changed from PlantCatalog to GlobalPlantCatalog
+contract GlobalPlantCatalog {
 
     // --- Data Structures ---
 
