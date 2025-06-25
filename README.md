@@ -1,13 +1,15 @@
-# Sintrop OS Apps
-Sintrop OS Apps and core contracts.
+# Sintrop Core Contracts
+Sintrop OS ImpactApps and core contracts.
 
 ## Project introduction 
-Main community Operating System apps. 
+Main community Operating System and ImpactApps. This repo acts as a smart contract development center and public database for the contracts.
+
+Any project that helps to impact positevely the environment is welcome here.
 
 ## Getting Started
 
 New contributors that want to fight for Nature are very welcome and needed.
-Before you start contributing, familiarize yourself with the Regeneration Credit sofware.
+Before you start contributing, familiarize yourself with the Sintrop Core sofware and with the development of smart contracts.
 
 ## How to contribute
 You can contribute:
