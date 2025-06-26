@@ -19,6 +19,7 @@ contract SintropAppStore {
         address publisher;          /// @notice Wallet address that published the ImpactApp.
         string name;                /// @notice Name of the ImpactApp.
         string description;         /// @notice Detailed description of the ImpactApp.
+        string icon;                /// @notice URL to an icon image.
         string repositoryUrl;       /// @notice URL to the code repository (e.g., GitHub, GitLab).
         string externalLink;        /// @notice URL to the ImpactApp's website or external interface.
         address[] contractAddresses;/// @notice List of smart contract addresses that compose the ImpactApp.
@@ -68,6 +69,7 @@ contract SintropAppStore {
      * The list of contract addresses must contain at least one address.
      * @param _name Name of the application.
      * @param _description Description of the application.
+     * @param _icon Foto or image URL used as app icon.
      * @param _repositoryUrl URL to the code repository (e.g., GitHub, GitLab).
      * @param _externalLink URL to the ImpactApp's website or external interface.
      * @param _contractAddresses List of smart contract addresses that compose the ImpactApp.
@@ -75,6 +77,7 @@ contract SintropAppStore {
     function registerImpactApp(
         string memory _name,
         string memory _description,
+        string memory _icon,
         string memory _repositoryUrl,
         string memory _externalLink,
         address[] memory _contractAddresses
@@ -82,6 +85,7 @@ contract SintropAppStore {
         // Input validation
         require(bytes(_name).length > 0 && bytes(_name).length <= 100, "Name must be between 1 and 100 characters.");
         require(bytes(_description).length > 0 && bytes(_description).length <= 1000, "Description must be between 1 and 1000 characters.");
+        require(bytes(_icon).length > 0 && bytes(_icon).length <= 150, "Icon must be between 1 and 150 characters.");
         require(bytes(_repositoryUrl).length > 0 && bytes(_repositoryUrl).length <= 200, "Repository URL must be between 1 and 200 characters.");
         require(bytes(_externalLink).length > 0 && bytes(_externalLink).length <= 200, "External link must be between 1 and 200 characters.");
         require(_contractAddresses.length > 0, "Must include at least one contract address.");
@@ -95,6 +99,7 @@ contract SintropAppStore {
             publisher: msg.sender,
             name: _name,
             description: _description,
+            icon: _icon,
             repositoryUrl: _repositoryUrl,
             externalLink: _externalLink,
             contractAddresses: _contractAddresses, // Copy the array of addresses
