@@ -138,7 +138,7 @@ describe("SintropAppStore", function () {
     // Test case for the revert condition (sad path).
     it("getImpactApp() should revert if the app ID does not exist", async function () {
       // We expect the call to fail with the specific error message from the `require` statement.
-      await expect(sintropAppStore.getImpactApp(999)).to.be.revertedWith("ImpactApp ID does not exist");
+      await expect(sintropAppStore.getImpactApp(999)).to.be.revertedWith("Invalid ImpactApp ID");
     });
   });
 

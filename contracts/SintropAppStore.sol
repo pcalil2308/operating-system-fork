@@ -163,12 +163,12 @@ contract SintropAppStore {
   /**
    * @notice Retrieves the full data for a specific ImpactApp.
    * @dev This function correctly returns the entire ImpactApp struct, including dynamic arrays and strings.
-   * @param _id The unique ID of the ImpactApp to retrieve.
+   * @param _impactAppId The unique ID of the ImpactApp to retrieve.
    * @return The complete ImpactApp struct in memory.
    */
-  function getImpactApp(uint256 _id) public view returns (ImpactApp memory) {
-    require(_id > 0 && _id <= impactAppsCount, "ImpactApp ID does not exist");
-    return impactApps[_id];
+  function getImpactApp(uint256 _impactAppId) public view returns (ImpactApp memory) {
+    require(_impactAppId > 0 && _impactAppId <= impactAppsCount, "Invalid ImpactApp ID");
+    return impactApps[_impactAppId];
   }
 
   // --- Events ---
