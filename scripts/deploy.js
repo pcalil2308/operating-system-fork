@@ -49,7 +49,7 @@ async function main() {
   await startDeployAlert();
 
   // await educationCenterDeploy();
-  // await sintropAppStoreDeploy();
+  await sintropAppStoreDeploy();
   // await globalPlantCatalogDeploy();
 
 //  await afterDeploy();

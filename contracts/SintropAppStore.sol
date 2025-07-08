@@ -42,7 +42,7 @@ contract SintropAppStore {
   uint256 public impactAppsCount;
 
   /// @notice Mapping of ImpactApp IDs to their complete information.
-  mapping(uint256 => ImpactApp) private _impactApps;
+  mapping(uint256 => ImpactApp) private impactApps;
 
   /// @notice Mapping of `impactAppId => voterAddress => VoteType` to track each wallet's votes.
   mapping(uint256 => mapping(address => VoteType)) public impactAppVotes;
@@ -89,7 +89,7 @@ contract SintropAppStore {
     uint256 newImpactAppId = impactAppsCount;
 
     // Create and store the new ImpactApp
-    _impactApps[newImpactAppId] = ImpactApp({
+    impactApps[newImpactAppId] = ImpactApp({
       id: newImpactAppId,
       publisher: msg.sender,
       name: _name,
@@ -116,7 +116,7 @@ contract SintropAppStore {
     require(_impactAppId > 0 && _impactAppId <= impactAppsCount, "Invalid ImpactApp ID.");
     require(_voteType == VoteType.Positive || _voteType == VoteType.Negative, "Invalid vote type.");
 
-    ImpactApp storage impactappToVote = _impactApps[_impactAppId]; // Use `storage` to modify directly
+    ImpactApp storage impactappToVote = impactApps[_impactAppId]; // Use `storage` to modify directly
 
     VoteType existingVote = impactAppVotes[_impactAppId][msg.sender];
 
@@ -154,7 +154,7 @@ contract SintropAppStore {
   function isImpactAppSustainable(uint256 _impactAppId) public view returns (bool) {
     require(_impactAppId > 0 && _impactAppId <= impactAppsCount, "Invalid ImpactApp ID.");
 
-    ImpactApp memory impactapp = _impactApps[_impactAppId]; // Use `memory` for reading in a view function
+    ImpactApp memory impactapp = impactApps[_impactAppId]; // Use `memory` for reading in a view function
 
     // Sustainability logic: more positive votes than negative.
     return impactapp.positiveVotes > impactapp.negativeVotes;
@@ -168,7 +168,7 @@ contract SintropAppStore {
    */
   function getImpactApp(uint256 _id) public view returns (ImpactApp memory) {
     require(_id > 0 && _id <= impactAppsCount, "ImpactApp ID does not exist");
-    return _impactApps[_id];
+    return impactApps[_id];
   }
 
   // --- Events ---
