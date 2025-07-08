@@ -48,9 +48,9 @@ function showDeployedAddress() {
 async function main() {
   await startDeployAlert();
 
-  await educationCenterDeploy();
-  await sintropAppStoreDeploy();
-  await globalPlantCatalogDeploy();
+  // await educationCenterDeploy();
+  // await sintropAppStoreDeploy();
+  // await globalPlantCatalogDeploy();
 
 //  await afterDeploy();
 

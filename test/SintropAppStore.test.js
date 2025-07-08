@@ -52,7 +52,7 @@ describe("SintropAppStore", function () {
       expect(await sintropAppStore.impactAppsCount()).to.equal(1);
 
       // We fetch the newly created app from the public `impactApps` mapping.
-      const newApp = await sintropAppStore.impactApps(1);
+      const newApp = await sintropAppStore.getImpactApp(1);
 
       // We check if all fields were stored correctly.
       expect(newApp.id).to.equal(1);
@@ -92,7 +92,7 @@ describe("SintropAppStore", function () {
         .to.emit(sintropAppStore, "ImpactAppVoted")
         .withArgs(1, addr1.address, VoteType.Positive);
 
-      const app = await sintropAppStore.impactApps(1);
+      const app = await sintropAppStore.getImpactApp(1);
       expect(app.positiveVotes).to.equal(1);
       expect(app.negativeVotes).to.equal(0);
 
@@ -104,12 +104,12 @@ describe("SintropAppStore", function () {
     it("Should allow a user to change their vote from positive to negative", async function () {
       // First, addr1 casts a positive vote.
       await sintropAppStore.connect(addr1).voteForImpactApp(1, VoteType.Positive);
-      let app = await sintropAppStore.impactApps(1);
+      let app = await sintropAppStore.getImpactApp(1);
       expect(app.positiveVotes).to.equal(1);
 
       // Now, addr1 changes their vote to negative.
       await sintropAppStore.connect(addr1).voteForImpactApp(1, VoteType.Negative);
-      app = await sintropAppStore.impactApps(1);
+      app = await sintropAppStore.getImpactApp(1);
 
       // We check if the counts were adjusted correctly.
       expect(app.positiveVotes).to.equal(0);
@@ -122,7 +122,7 @@ describe("SintropAppStore", function () {
     it("Should not change vote counts if voting with the same type again", async function () {
       // addr1 casts a positive vote.
       await sintropAppStore.connect(addr1).voteForImpactApp(1, VoteType.Positive);
-      let app = await sintropAppStore.impactApps(1);
+      let app = await sintropAppStore.getImpactApp(1);
       expect(app.positiveVotes).to.equal(1);
 
       // Try to vote positive again. The transaction will succeed, but it should not emit an event or change the state.
@@ -130,7 +130,7 @@ describe("SintropAppStore", function () {
         sintropAppStore.connect(addr1).voteForImpactApp(1, VoteType.Positive)
       ).to.not.emit(sintropAppStore, "ImpactAppVoted");
       
-      app = await sintropAppStore.impactApps(1);
+      app = await sintropAppStore.getImpactApp(1);
       // The count should remain the same.
       expect(app.positiveVotes).to.equal(1);
     });
