@@ -19,7 +19,7 @@ contract GlobalPlantCatalog {
    * @param scientificName Scientific name of the plant/tree.
    * @param taxonomy Full taxonomic classification (e.g., Kingdom, Phylum, Class, Order, Family, Genus, Species).
    * @param description A detailed description or additional information about the plant.
-   * @param photoHashes An array of IPFS hashes or URLs for the plant's photos.
+   * @param photoHash An array of IPFS hashes or URLs for the plant's photos.
    * @param creator The wallet address that added this plant to the catalog.
    * @param createdAt The timestamp (block.timestamp) when the plant was added.
    */
@@ -29,7 +29,7 @@ contract GlobalPlantCatalog {
     string scientificName;
     string taxonomy;
     string description;
-    string[] photoHashes;
+    string photoHash;
     address creator;
     uint256 createdAt;
   }
@@ -73,14 +73,14 @@ contract GlobalPlantCatalog {
    * @param _scientificName The scientific name of the plant (e.g., "Cariniana legalis").
    * @param _taxonomy The taxonomic classification (e.g., "Family: Lecythidaceae, Genus: Cariniana").
    * @param _description A description or additional information.
-   * @param _photoHashes An array of strings containing IPFS hashes or URLs for the photos.
+   * @param _photoHash An array of strings containing IPFS hashes or URLs for the photos.
    */
   function addPlant(
     string memory _popularName,
     string memory _scientificName,
     string memory _taxonomy,
     string memory _description,
-    string[] calldata _photoHashes
+    string calldata _photoHash
   ) public {
     uint256 currentId = nextPlantId;
 
@@ -91,7 +91,7 @@ contract GlobalPlantCatalog {
       _scientificName,
       _taxonomy,
       _description,
-      _photoHashes, // Note: photoHashes is copied
+      _photoHash,
       msg.sender,
       block.timestamp
     );

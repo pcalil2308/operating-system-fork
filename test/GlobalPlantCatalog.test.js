@@ -39,12 +39,12 @@ describe("GlobalPlantCatalog", function () {
       const scientificName = "Paubrasilia echinata";
       const taxonomy = "Fabaceae";
       const description = "A Brazilian timber tree.";
-      const photoHashes = ["ipfs://hash1", "ipfs://hash2"];
+      const photoHash = "ipfs://hash1";
 
       // We expect the transaction to EMIT the `PlantAdded` event with correct arguments.
       // The `anyValue` from Chai is useful for checking `block.timestamp` without knowing the exact value.
       await expect(
-        plantCatalog.addPlant(popularName, scientificName, taxonomy, description, photoHashes)
+        plantCatalog.addPlant(popularName, scientificName, taxonomy, description, photoHash)
       )
         .to.emit(plantCatalog, "PlantAdded")
         .withArgs(0, owner.address, popularName, scientificName, (value) => {
@@ -61,15 +61,15 @@ describe("GlobalPlantCatalog", function () {
       expect(newPlant.id).to.equal(0);
       expect(newPlant.creator).to.equal(owner.address);
       expect(newPlant.popularName).to.equal(popularName);
-      expect(newPlant.photoHashes).to.deep.equal(photoHashes); // Use `deep.equal` for arrays.
+      expect(newPlant.photoHash).to.equal(photoHash);
     });
 
     it("Should correctly assign IDs and creators for multiple plants from different users", async function () {
       // addr1 adds the first plant (ID 0)
-      await plantCatalog.connect(addr1).addPlant("Jatobá", "Hymenaea courbaril", "Fabaceae", "...", []);
+      await plantCatalog.connect(addr1).addPlant("Jatobá", "Hymenaea courbaril", "Fabaceae", "...", "...");
       
       // addr2 adds the second plant (ID 1)
-      await plantCatalog.connect(addr2).addPlant("Ipê Amarelo", "Handroanthus albus", "Bignoniaceae", "...", []);
+      await plantCatalog.connect(addr2).addPlant("Ipê Amarelo", "Handroanthus albus", "Bignoniaceae", "...", "...");
 
       expect(await plantCatalog.getTotalPlantsCount()).to.equal(2);
 
@@ -87,11 +87,11 @@ describe("GlobalPlantCatalog", function () {
     // Before each retrieval test, we pre-populate the catalog with some data.
     beforeEach(async function () {
       // addr1 adds plant with ID 0
-      await plantCatalog.connect(addr1).addPlant("Plant A", "A scientia", "...", "...", []);
+      await plantCatalog.connect(addr1).addPlant("Plant A", "A scientia", "...", "...", "...");
       // addr2 adds plant with ID 1
-      await plantCatalog.connect(addr2).addPlant("Plant B", "B scientia", "...", "...", []);
+      await plantCatalog.connect(addr2).addPlant("Plant B", "B scientia", "...", "...", "...");
       // addr1 adds another plant with ID 2
-      await plantCatalog.connect(addr1).addPlant("Plant C", "C scientia", "...", "...", []);
+      await plantCatalog.connect(addr1).addPlant("Plant C", "C scientia", "...", "...", "...");
     });
 
     it("getPlant() should return the correct plant data", async function () {
