@@ -6,7 +6,7 @@ pragma solidity >=0.8.2 <0.9.0;
  * @author Sintrop
  * @notice A decentralized platform for users to publish and access free educational content.
  * @dev This contract manages the storage and retrieval of content entries, each identified by a unique ID.
- * It emphasizes public access and user contribution.
+ * It emphasizes public access, user contribution, and a simple voting mechanism.
  */
 contract FreeEducationCenter {
   // --- State Variables ---
@@ -19,16 +19,31 @@ contract FreeEducationCenter {
   /// @dev This mapping allows efficient retrieval of content using its `id`.
   mapping(uint256 => Content) public contents;
 
+  /// @notice Tracks the vote cast by each user for each piece of content.
+  /// @dev Maps a content ID to another mapping from user address to their vote type.
+  mapping(uint256 => mapping(address => VoteType)) public userVotes;
+
+  // --- Enums ---
+
+  /// @notice Represents the type of vote a user can cast: no vote, a positive vote (Upvote), or a negative vote (Downvote).
+  enum VoteType {
+    None,
+    Upvote,
+    Downvote
+  }
+
   // --- Structs ---
 
   /// @notice Represents a single educational content entry within the Free Education Center.
-  /// @dev Each content piece includes metadata and links to the actual content.
+  /// @dev Each content piece includes metadata, links to the actual content, and vote counts.
   struct Content {
     uint256 id; ///< @notice The unique identifier for this content entry.
     string title; ///< @notice The title of the educational content.
     string description; ///< @notice A brief description of the content.
     string url; ///< @notice The URL or IPFS CID pointing to the actual content resource.
     string photo; ///< @notice The URL or IPFS CID for a representative image or thumbnail.
+    uint256 upvotes; ///< @notice The total count of positive votes (upvotes).
+    uint256 downvotes; ///< @notice The total count of negative votes (downvotes).
   }
 
   // --- Events ---
@@ -38,6 +53,12 @@ contract FreeEducationCenter {
   /// @param title The title of the published content.
   /// @param publisher The address of the user who published the content.
   event ContentPublished(uint256 indexed id, string title, address indexed publisher);
+
+  /// @notice Emitted when a user casts or changes their vote on a piece of content.
+  /// @param contentId The ID of the content that was voted on.
+  /// @param voter The address of the user who voted.
+  /// @param voteType The type of vote cast (Upvote or Downvote).
+  event Voted(uint256 indexed contentId, address indexed voter, VoteType voteType);
 
   // --- Public Functions ---
 
@@ -70,11 +91,64 @@ contract FreeEducationCenter {
     contentsCount++; // Increment count to get the next ID
     uint256 newId = contentsCount; // Use the new count as the ID
 
-    // Store the new content entry in the mapping
-    contents[newId] = Content(newId, _title, _description, _url, _photo);
+    // Store the new content entry in the mapping, initializing votes to zero.
+    contents[newId] = Content(newId, _title, _description, _url, _photo, 0, 0);
 
     // Emit an event to allow off-chain applications to track new content.
     emit ContentPublished(newId, _title, msg.sender);
+  }
+
+  /**
+   * @notice Casts a vote on a piece of content. A user can change their vote.
+   * @dev Updates the vote counts based on the user's previous vote.
+   * Prevents a user from casting the same vote twice.
+   * @param _id The unique ID of the content to vote on.
+   * @param _isUpvote True for a positive vote (upvote), false for a negative vote (downvote).
+   */
+  function vote(uint256 _id, bool _isUpvote) public {
+    require(_id > 0 && _id <= contentsCount, "FEC: Content ID does not exist");
+
+    Content storage contentToVote = contents[_id];
+    VoteType previousVote = userVotes[_id][msg.sender];
+    VoteType newVote = _isUpvote ? VoteType.Upvote : VoteType.Downvote;
+
+    // A user cannot cast the same vote again.
+    require(previousVote != newVote, "FEC: You have already cast this vote");
+
+    // Adjust counts if changing from Downvote to Upvote
+    if (previousVote == VoteType.Downvote && newVote == VoteType.Upvote) {
+      contentToVote.downvotes--;
+      contentToVote.upvotes++;
+    }
+    // Adjust counts if changing from Upvote to Downvote
+    else if (previousVote == VoteType.Upvote && newVote == VoteType.Downvote) {
+      contentToVote.upvotes--;
+      contentToVote.downvotes++;
+    }
+    // Adjust counts for a new vote
+    else if (previousVote == VoteType.None) {
+      if (newVote == VoteType.Upvote) {
+        contentToVote.upvotes++;
+      } else {
+        contentToVote.downvotes++;
+      }
+    }
+
+    // Update the user's vote status
+    userVotes[_id][msg.sender] = newVote;
+
+    // Emit an event to notify off-chain applications about the new vote.
+    emit Voted(_id, msg.sender, newVote);
+  }
+
+  /**
+   * @notice Checks if a piece of content has more positive votes than negative votes.
+   * @param _id The unique ID of the content to check.
+   * @return bool True if upvotes are strictly greater than downvotes, false otherwise.
+   */
+  function hasMoreUpvotes(uint256 _id) public view returns (bool) {
+    require(_id > 0 && _id <= contentsCount, "FEC: Content ID does not exist");
+    return contents[_id].upvotes > contents[_id].downvotes;
   }
 
   /**

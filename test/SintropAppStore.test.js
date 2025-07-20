@@ -42,9 +42,7 @@ describe("SintropAppStore", function () {
       const contractAddresses = [ethers.Wallet.createRandom().address]; // A random contract address
 
       // We expect the registration transaction to EMIT the `ImpactAppRegistered` event with the correct arguments.
-      await expect(
-        sintropAppStore.registerImpactApp(name, description, icon, repoUrl, externalLink, contractAddresses)
-      )
+      await expect(sintropAppStore.registerImpactApp(name, description, icon, repoUrl, externalLink, contractAddresses))
         .to.emit(sintropAppStore, "ImpactAppRegistered")
         .withArgs(1, name, owner.address);
 
@@ -66,9 +64,9 @@ describe("SintropAppStore", function () {
     it("Should revert if contract address array is empty", async function () {
       // We test a failure case: registering an app with no contract addresses.
       // We expect the transaction to be reverted with the exact error message from the `require` statement.
-      await expect(
-        sintropAppStore.registerImpactApp("Test", "Desc", "icon", "repo", "link", [])
-      ).to.be.revertedWith("Must include at least one contract address.");
+      await expect(sintropAppStore.registerImpactApp("Test", "Desc", "icon", "repo", "link", [])).to.be.revertedWith(
+        "Must include at least one contract address."
+      );
     });
 
     it("Should revert if name is empty", async function () {
@@ -93,7 +91,7 @@ describe("SintropAppStore", function () {
         repositoryUrl: "https://github.com/greenledger",
         externalLink: "https://greenledger.org",
         // Create two random addresses for the contract list to test the array.
-        contractAddresses: [ethers.Wallet.createRandom().address, ethers.Wallet.createRandom().address]
+        contractAddresses: [ethers.Wallet.createRandom().address, ethers.Wallet.createRandom().address],
       };
 
       // Register the app using the owner's account.
@@ -189,19 +187,20 @@ describe("SintropAppStore", function () {
       expect(app.positiveVotes).to.equal(1);
 
       // Try to vote positive again. The transaction will succeed, but it should not emit an event or change the state.
-      await expect(
-        sintropAppStore.connect(addr1).voteForImpactApp(1, VoteType.Positive)
-      ).to.not.emit(sintropAppStore, "ImpactAppVoted");
-      
+      await expect(sintropAppStore.connect(addr1).voteForImpactApp(1, VoteType.Positive)).to.not.emit(
+        sintropAppStore,
+        "ImpactAppVoted"
+      );
+
       app = await sintropAppStore.getImpactApp(1);
       // The count should remain the same.
       expect(app.positiveVotes).to.equal(1);
     });
 
     it("Should revert for an invalid ImpactApp ID", async function () {
-        await expect(
-            sintropAppStore.voteForImpactApp(999, VoteType.Positive)
-        ).to.be.revertedWith("Invalid ImpactApp ID.");
+      await expect(sintropAppStore.voteForImpactApp(999, VoteType.Positive)).to.be.revertedWith(
+        "Invalid ImpactApp ID."
+      );
     });
   });
 
