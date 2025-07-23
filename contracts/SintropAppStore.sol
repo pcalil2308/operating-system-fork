@@ -151,7 +151,7 @@ contract SintropAppStore {
    * @param _impactAppId The ID of the ImpactApp to be checked.
    * @return bool True if the ImpactApp is considered sustainable, false otherwise.
    */
-  function isImpactAppSustainable(uint256 _impactAppId) public view returns (bool) {
+  function isImpactApp(uint256 _impactAppId) public view returns (bool) {
     require(_impactAppId > 0 && _impactAppId <= impactAppsCount, "Invalid ImpactApp ID.");
 
     ImpactApp memory impactapp = impactApps[_impactAppId]; // Use `memory` for reading in a view function

@@ -212,20 +212,20 @@ describe("SintropAppStore", function () {
 
     it("Should not be sustainable initially (0 votes)", async function () {
       // 0 > 0 is false.
-      expect(await sintropAppStore.isImpactAppSustainable(1)).to.be.false;
+      expect(await sintropAppStore.isImpactApp(1)).to.be.false;
     });
 
     it("Should be sustainable if positive votes are greater than negative votes", async function () {
       await sintropAppStore.connect(addr1).voteForImpactApp(1, VoteType.Positive);
       // 1 > 0 is true.
-      expect(await sintropAppStore.isImpactAppSustainable(1)).to.be.true;
+      expect(await sintropAppStore.isImpactApp(1)).to.be.true;
     });
 
     it("Should not be sustainable if votes are equal", async function () {
       await sintropAppStore.connect(addr1).voteForImpactApp(1, VoteType.Positive);
       await sintropAppStore.connect(addr2).voteForImpactApp(1, VoteType.Negative);
       // 1 > 1 is false.
-      expect(await sintropAppStore.isImpactAppSustainable(1)).to.be.false;
+      expect(await sintropAppStore.isImpactApp(1)).to.be.false;
     });
   });
 });
