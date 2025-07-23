@@ -20,7 +20,7 @@ contract FreeEducationCenter {
   mapping(uint256 => Content) public contents;
 
   /// @notice Tracks the vote cast by each user for each piece of content.
-  /// @dev Maps a content ID to another mapping from user address to their vote type.
+  /// @dev Maps a content ID to another mapping from a user address to their vote type.
   mapping(uint256 => mapping(address => VoteType)) public userVotes;
 
   // --- Enums ---
@@ -100,45 +100,39 @@ contract FreeEducationCenter {
 
   /**
    * @notice Casts a vote on a piece of content. A user can change their vote.
-   * @dev Updates the vote counts based on the user's previous vote.
-   * Prevents a user from casting the same vote twice.
+   * @dev If a user votes again with a different type, the old vote is removed and the new one is applied.
+   * Voting with the same type again has no effect.
    * @param _id The unique ID of the content to vote on.
-   * @param _isUpvote True for a positive vote (upvote), false for a negative vote (downvote).
+   * @param _voteType The type of vote: `VoteType.Upvote` or `VoteType.Downvote`.
    */
-  function vote(uint256 _id, bool _isUpvote) public {
+  function vote(uint256 _id, VoteType _voteType) public {
     require(_id > 0 && _id <= contentsCount, "FEC: Content ID does not exist");
+    require(_voteType == VoteType.Upvote || _voteType == VoteType.Downvote, "FEC: Invalid vote type");
 
     Content storage contentToVote = contents[_id];
-    VoteType previousVote = userVotes[_id][msg.sender];
-    VoteType newVote = _isUpvote ? VoteType.Upvote : VoteType.Downvote;
+    VoteType existingVote = userVotes[_id][msg.sender];
 
-    // A user cannot cast the same vote again.
-    require(previousVote != newVote, "FEC: You have already cast this vote");
+    // Proceed only if the new vote is different from the existing one.
+    if (existingVote != _voteType) {
+      // Revert the previous vote count, if any.
+      if (existingVote == VoteType.Upvote) {
+        contentToVote.upvotes--;
+      } else if (existingVote == VoteType.Downvote) {
+        contentToVote.downvotes--;
+      }
 
-    // Adjust counts if changing from Downvote to Upvote
-    if (previousVote == VoteType.Downvote && newVote == VoteType.Upvote) {
-      contentToVote.downvotes--;
-      contentToVote.upvotes++;
-    }
-    // Adjust counts if changing from Upvote to Downvote
-    else if (previousVote == VoteType.Upvote && newVote == VoteType.Downvote) {
-      contentToVote.upvotes--;
-      contentToVote.downvotes++;
-    }
-    // Adjust counts for a new vote
-    else if (previousVote == VoteType.None) {
-      if (newVote == VoteType.Upvote) {
+      // Apply the new vote count.
+      if (_voteType == VoteType.Upvote) {
         contentToVote.upvotes++;
       } else {
+        // _voteType == VoteType.Downvote
         contentToVote.downvotes++;
       }
+
+      // Store the user's new vote and emit the event.
+      userVotes[_id][msg.sender] = _voteType;
+      emit Voted(_id, msg.sender, _voteType);
     }
-
-    // Update the user's vote status
-    userVotes[_id][msg.sender] = newVote;
-
-    // Emit an event to notify off-chain applications about the new vote.
-    emit Voted(_id, msg.sender, newVote);
   }
 
   /**

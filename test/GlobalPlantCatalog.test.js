@@ -126,6 +126,13 @@ describe("GlobalPlantCatalog", function () {
     let owner, addr1, addr2;
     const plantId = 0; // ID of the first plant, since IDs start at 0
 
+    // Enum values mimicking the contract's VoteType
+    const VOTE_TYPE = {
+      None: 0,
+      Upvote: 1,
+      Downvote: 2,
+    };
+
     // Hook to run before each test in this suite
     beforeEach(async function () {
       const GlobalPlantCatalog = await ethers.getContractFactory("GlobalPlantCatalog");
@@ -148,7 +155,7 @@ describe("GlobalPlantCatalog", function () {
     describe("vote()", function () {
       context("When a user casts a new vote", function () {
         it("✅ Should allow an upvote and increment the upvotes count", async function () {
-          await globalPlantCatalog.connect(addr1).vote(plantId, true);
+          await globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.Upvote);
 
           const plant = await globalPlantCatalog.plants(plantId);
           expect(plant.upvotes).to.equal(1);
@@ -156,7 +163,7 @@ describe("GlobalPlantCatalog", function () {
         });
 
         it("✅ Should allow a downvote and increment the downvotes count", async function () {
-          await globalPlantCatalog.connect(addr1).vote(plantId, false);
+          await globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.Downvote);
 
           const plant = await globalPlantCatalog.plants(plantId);
           expect(plant.downvotes).to.equal(1);
@@ -164,16 +171,16 @@ describe("GlobalPlantCatalog", function () {
         });
 
         it("📣 Should emit a 'Voted' event when a new vote is cast", async function () {
-          await expect(globalPlantCatalog.connect(addr1).vote(plantId, true))
+          await expect(globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.Upvote))
             .to.emit(globalPlantCatalog, "Voted")
-            .withArgs(plantId, addr1.address, 1); // 1 = VoteType.Upvote
+            .withArgs(plantId, addr1.address, VOTE_TYPE.Upvote);
         });
       });
 
       context("When a user changes their vote", function () {
         it("🔄 Should allow changing from an upvote to a downvote, adjusting counts", async function () {
-          await globalPlantCatalog.connect(addr1).vote(plantId, true); // First vote
-          await globalPlantCatalog.connect(addr1).vote(plantId, false); // Change vote
+          await globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.Upvote);
+          await globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.Downvote);
 
           const plant = await globalPlantCatalog.plants(plantId);
           expect(plant.upvotes).to.equal(0);
@@ -181,8 +188,8 @@ describe("GlobalPlantCatalog", function () {
         });
 
         it("🔄 Should allow changing from a downvote to an upvote, adjusting counts", async function () {
-          await globalPlantCatalog.connect(addr1).vote(plantId, false); // First vote
-          await globalPlantCatalog.connect(addr1).vote(plantId, true); // Change vote
+          await globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.Downvote);
+          await globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.Upvote);
 
           const plant = await globalPlantCatalog.plants(plantId);
           expect(plant.upvotes).to.equal(1);
@@ -190,19 +197,33 @@ describe("GlobalPlantCatalog", function () {
         });
       });
 
-      context("Failure scenarios (reverts)", function () {
-        it("❌ Should revert if the user tries to cast the same vote again", async function () {
-          await globalPlantCatalog.connect(addr1).vote(plantId, true);
+      context("When a user casts the same vote again", function () {
+        it("⚖️ Should not change state or emit an event", async function () {
+          await globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.Upvote);
+          const plantBefore = await globalPlantCatalog.plants(plantId);
 
-          await expect(globalPlantCatalog.connect(addr1).vote(plantId, true)).to.be.revertedWith(
-            "GPC: You have already cast this vote"
+          await expect(globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.Upvote)).to.not.emit(
+            globalPlantCatalog,
+            "Voted"
+          );
+
+          const plantAfter = await globalPlantCatalog.plants(plantId);
+          expect(plantAfter.upvotes).to.equal(plantBefore.upvotes);
+          expect(plantAfter.downvotes).to.equal(plantBefore.downvotes);
+        });
+      });
+
+      context("Failure scenarios (reverts)", function () {
+        it("❌ Should revert when trying to vote on a non-existent plant", async function () {
+          const nonExistentId = 999;
+          await expect(globalPlantCatalog.connect(addr1).vote(nonExistentId, VOTE_TYPE.Upvote)).to.be.revertedWith(
+            "GPC: Plant ID does not exist"
           );
         });
 
-        it("❌ Should revert when trying to vote on a non-existent plant", async function () {
-          const nonExistentId = 999;
-          await expect(globalPlantCatalog.connect(addr1).vote(nonExistentId, true)).to.be.revertedWith(
-            "GPC: Plant ID does not exist"
+        it("❌ Should revert if the vote type is invalid (e.g., None)", async function () {
+          await expect(globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.None)).to.be.revertedWith(
+            "GPC: Invalid vote type"
           );
         });
       });
@@ -211,21 +232,21 @@ describe("GlobalPlantCatalog", function () {
     // --- Tests for the hasMoreUpvotes() function ---
     describe("hasMoreUpvotes()", function () {
       it("👍 Should return 'true' when upvotes are greater than downvotes", async function () {
-        await globalPlantCatalog.connect(addr1).vote(plantId, true);
-        await globalPlantCatalog.connect(addr2).vote(plantId, true);
+        await globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.Upvote);
+        await globalPlantCatalog.connect(addr2).vote(plantId, VOTE_TYPE.Upvote);
 
         expect(await globalPlantCatalog.hasMoreUpvotes(plantId)).to.be.true;
       });
 
       it("👎 Should return 'false' when downvotes are greater than upvotes", async function () {
-        await globalPlantCatalog.connect(addr1).vote(plantId, false);
+        await globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.Downvote);
 
         expect(await globalPlantCatalog.hasMoreUpvotes(plantId)).to.be.false;
       });
 
       it("🤝 Should return 'false' when upvotes and downvotes are equal", async function () {
-        await globalPlantCatalog.connect(addr1).vote(plantId, true);
-        await globalPlantCatalog.connect(addr2).vote(plantId, false);
+        await globalPlantCatalog.connect(addr1).vote(plantId, VOTE_TYPE.Upvote);
+        await globalPlantCatalog.connect(addr2).vote(plantId, VOTE_TYPE.Downvote);
 
         expect(await globalPlantCatalog.hasMoreUpvotes(plantId)).to.be.false;
       });
