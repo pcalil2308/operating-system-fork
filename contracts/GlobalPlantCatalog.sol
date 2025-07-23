@@ -7,9 +7,18 @@ pragma solidity ^0.8.0;
  * @notice A global and open catalog of plants and trees registered on the blockchain.
  * @dev This contract allows any user to add detailed information about plants,
  * storing it in a decentralized manner and associating it with the creator.
- * Image data (photos) are stored as hashes/URLs for off-chain content (e.g., IPFS).
+ * It also includes a simple voting mechanism for community feedback.
  */
 contract GlobalPlantCatalog {
+  // --- Enums ---
+
+  /// @notice Represents the type of vote a user can cast: no vote, a positive vote (Upvote), or a negative vote (Downvote).
+  enum VoteType {
+    None,
+    Upvote,
+    Downvote
+  }
+
   // --- Data Structures ---
 
   /**
@@ -17,11 +26,13 @@ contract GlobalPlantCatalog {
    * @param id Unique identifier of the plant.
    * @param popularName Popular name of the plant/tree.
    * @param scientificName Scientific name of the plant/tree.
-   * @param taxonomy Full taxonomic classification (e.g., Kingdom, Phylum, Class, Order, Family, Genus, Species).
-   * @param description A detailed description or additional information about the plant.
-   * @param photoHashes An array of IPFS hashes or URLs for the plant's photos.
+   * @param taxonomy Full taxonomic classification.
+   * @param description A detailed description of the plant.
+   * @param photoHash An IPFS hash or URL for the plant's photos.
    * @param creator The wallet address that added this plant to the catalog.
-   * @param createdAt The timestamp (block.timestamp) when the plant was added.
+   * @param createdAt The timestamp when the plant was added.
+   * @param upvotes The total count of positive votes.
+   * @param downvotes The total count of negative votes.
    */
   struct Plant {
     uint256 id;
@@ -29,15 +40,21 @@ contract GlobalPlantCatalog {
     string scientificName;
     string taxonomy;
     string description;
-    string[] photoHashes;
+    string photoHash;
     address creator;
     uint256 createdAt;
+    uint256 upvotes;
+    uint256 downvotes;
   }
 
   // --- State Variables ---
 
   /// @notice Mapping from plant ID to the complete Plant data structure.
   mapping(uint256 => Plant) public plants;
+
+  /// @notice Tracks the vote cast by each user for each plant.
+  /// @dev Maps a plant ID to another mapping from a user address to their vote type.
+  mapping(uint256 => mapping(address => VoteType)) public userVotes;
 
   /// @notice Mapping from creator address to an array of IDs of plants they have added.
   mapping(address => uint256[]) public creatorPlants;
@@ -63,88 +80,105 @@ contract GlobalPlantCatalog {
     uint256 createdAt
   );
 
+  /**
+   * @notice Emitted when a user casts or changes their vote on a plant.
+   * @param plantId The ID of the plant that was voted on.
+   * @param voter The address of the user who voted.
+   * @param voteType The type of vote cast (Upvote or Downvote).
+   */
+  event Voted(uint256 indexed plantId, address indexed voter, VoteType voteType);
+
   // --- Functions ---
 
   /**
    * @notice Adds a new plant or tree to the global catalog.
-   * @dev Anyone can call this function to register a plant.
-   * Plant IDs are automatically incremented.
-   * @param _popularName The popular name of the plant (e.g., "Rosewood").
-   * @param _scientificName The scientific name of the plant (e.g., "Cariniana legalis").
-   * @param _taxonomy The taxonomic classification (e.g., "Family: Lecythidaceae, Genus: Cariniana").
+   * @dev Plant IDs are automatically incremented starting from 0.
+   * @param _popularName The popular name of the plant.
+   * @param _scientificName The scientific name of the plant.
+   * @param _taxonomy The taxonomic classification.
    * @param _description A description or additional information.
-   * @param _photoHashes An array of strings containing IPFS hashes or URLs for the photos.
+   * @param _photoHash An IPFS hash or URL for the photos.
    */
   function addPlant(
     string memory _popularName,
     string memory _scientificName,
     string memory _taxonomy,
     string memory _description,
-    string[] calldata _photoHashes
+    string calldata _photoHash
   ) public {
     uint256 currentId = nextPlantId;
 
-    // Create and store the new Plant struct
+    // Create and store the new Plant struct, initializing votes to zero
     plants[currentId] = Plant(
       currentId,
       _popularName,
       _scientificName,
       _taxonomy,
       _description,
-      _photoHashes, // Note: photoHashes is copied
+      _photoHash,
       msg.sender,
-      block.timestamp
+      block.number,
+      0, // upvotes
+      0 // downvotes
     );
 
-    // Associate the plant with its creator
     creatorPlants[msg.sender].push(currentId);
-
-    // Increment the counter for the next ID
     nextPlantId++;
-
-    // Emit the event for tracking
-    emit PlantAdded(currentId, msg.sender, _popularName, _scientificName, block.timestamp);
+    emit PlantAdded(currentId, msg.sender, _popularName, _scientificName, block.number);
   }
 
   /**
-   * @notice Returns the details of a specific plant given its ID.
-   * @param _plantId The unique ID of the plant to query.
-   * @return Plant The complete plant data structure.
+   * @notice Casts a vote on a plant. A user can change their vote.
+   * @dev Updates vote counts based on the user's previous vote.
+   * @param _plantId The unique ID of the plant to vote on.
+   * @param _isUpvote True for a positive vote (upvote), false for a negative vote (downvote).
    */
+  function vote(uint256 _plantId, bool _isUpvote) public {
+    require(_plantId < nextPlantId, "GPC: Plant ID does not exist");
+
+    Plant storage plantToVote = plants[_plantId];
+    VoteType previousVote = userVotes[_plantId][msg.sender];
+    VoteType newVote = _isUpvote ? VoteType.Upvote : VoteType.Downvote;
+
+    require(previousVote != newVote, "GPC: You have already cast this vote");
+
+    if (previousVote == VoteType.Downvote && newVote == VoteType.Upvote) {
+      plantToVote.downvotes--;
+      plantToVote.upvotes++;
+    } else if (previousVote == VoteType.Upvote && newVote == VoteType.Downvote) {
+      plantToVote.upvotes--;
+      plantToVote.downvotes++;
+    } else if (previousVote == VoteType.None) {
+      if (newVote == VoteType.Upvote) {
+        plantToVote.upvotes++;
+      } else {
+        plantToVote.downvotes++;
+      }
+    }
+
+    userVotes[_plantId][msg.sender] = newVote;
+    emit Voted(_plantId, msg.sender, newVote);
+  }
+
+  /**
+   * @notice Checks if a plant has more positive votes than negative votes.
+   * @param _plantId The unique ID of the plant to check.
+   * @return bool True if upvotes are strictly greater than downvotes, false otherwise.
+   */
+  function hasMoreUpvotes(uint256 _plantId) public view returns (bool) {
+    require(_plantId < nextPlantId, "GPC: Plant ID does not exist");
+    return plants[_plantId].upvotes > plants[_plantId].downvotes;
+  }
+
   function getPlant(uint256 _plantId) public view returns (Plant memory) {
     require(_plantId < nextPlantId, "Plant ID does not exist");
     return plants[_plantId];
   }
 
-  /**
-   * @notice Returns the total number of plants registered in the catalog.
-   * @return uint256 The total number of plants (equal to the current `nextPlantId`).
-   */
   function getTotalPlantsCount() public view returns (uint256) {
     return nextPlantId;
   }
 
-  /**
-   * @notice Returns a list of all plant IDs that have been added to the catalog.
-   * @dev Useful for off-chain applications that want to iterate over all plants.
-   * WARNING: If the number of plants is very large (thousands), calling this function
-   * can be gas-expensive (off-chain) to load all IDs.
-   * Consider paginated iterations or querying by creator for very large catalogs.
-   * @return uint256[] An array containing all registered plant IDs.
-   */
-  function getAllPlantIds() public view returns (uint256[] memory) {
-    uint256[] memory allIds = new uint256[](nextPlantId);
-    for (uint256 i = 0; i < nextPlantId; i++) {
-      allIds[i] = i; // IDs are sequential from 0 to nextPlantId-1
-    }
-    return allIds;
-  }
-
-  /**
-   * @notice Returns a list of plant IDs created by a specific address.
-   * @param _creator The wallet address of the creator.
-   * @return uint256[] An array of plant IDs created by the provided address.
-   */
   function getPlantsByCreator(address _creator) public view returns (uint256[] memory) {
     return creatorPlants[_creator];
   }

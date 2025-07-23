@@ -42,24 +42,10 @@ contract SintropAppStore {
   uint256 public impactAppsCount;
 
   /// @notice Mapping of ImpactApp IDs to their complete information.
-  mapping(uint256 => ImpactApp) public impactApps;
+  mapping(uint256 => ImpactApp) private impactApps;
 
   /// @notice Mapping of `impactAppId => voterAddress => VoteType` to track each wallet's votes.
   mapping(uint256 => mapping(address => VoteType)) public impactAppVotes;
-
-  // --- Events ---
-
-  /// @notice Emitted when a new ImpactApp is registered in the SintropAppStore.
-  /// @param impactAppId The unique ID of the registered ImpactApp.
-  /// @param name The name of the ImpactApp.
-  /// @param publisher The wallet address that registered the ImpactApp.
-  event ImpactAppRegistered(uint256 indexed impactAppId, string name, address indexed publisher);
-
-  /// @notice Emitted when a wallet votes on a ImpactApp.
-  /// @param impactAppId The ID of the ImpactApp voted on.
-  /// @param voter The address of the wallet that voted.
-  /// @param voteType The type of vote (Positive or Negative).
-  event ImpactAppVoted(uint256 indexed impactAppId, address indexed voter, VoteType voteType);
 
   // --- Functions ---
 
@@ -165,7 +151,7 @@ contract SintropAppStore {
    * @param _impactAppId The ID of the ImpactApp to be checked.
    * @return bool True if the ImpactApp is considered sustainable, false otherwise.
    */
-  function isImpactAppSustainable(uint256 _impactAppId) public view returns (bool) {
+  function isImpactApp(uint256 _impactAppId) public view returns (bool) {
     require(_impactAppId > 0 && _impactAppId <= impactAppsCount, "Invalid ImpactApp ID.");
 
     ImpactApp memory impactapp = impactApps[_impactAppId]; // Use `memory` for reading in a view function
@@ -173,4 +159,29 @@ contract SintropAppStore {
     // Sustainability logic: more positive votes than negative.
     return impactapp.positiveVotes > impactapp.negativeVotes;
   }
+
+  /**
+   * @notice Retrieves the full data for a specific ImpactApp.
+   * @dev This function correctly returns the entire ImpactApp struct, including dynamic arrays and strings.
+   * @param _impactAppId The unique ID of the ImpactApp to retrieve.
+   * @return The complete ImpactApp struct in memory.
+   */
+  function getImpactApp(uint256 _impactAppId) public view returns (ImpactApp memory) {
+    require(_impactAppId > 0 && _impactAppId <= impactAppsCount, "Invalid ImpactApp ID");
+    return impactApps[_impactAppId];
+  }
+
+  // --- Events ---
+
+  /// @notice Emitted when a new ImpactApp is registered in the SintropAppStore.
+  /// @param impactAppId The unique ID of the registered ImpactApp.
+  /// @param name The name of the ImpactApp.
+  /// @param publisher The wallet address that registered the ImpactApp.
+  event ImpactAppRegistered(uint256 indexed impactAppId, string name, address indexed publisher);
+
+  /// @notice Emitted when a wallet votes on a ImpactApp.
+  /// @param impactAppId The ID of the ImpactApp voted on.
+  /// @param voter The address of the wallet that voted.
+  /// @param voteType The type of vote (Positive or Negative).
+  event ImpactAppVoted(uint256 indexed impactAppId, address indexed voter, VoteType voteType);
 }

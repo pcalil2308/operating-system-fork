@@ -59,32 +59,32 @@ describe("FreeEducationCenter", function () {
     });
 
     it("Should allow adding content with an empty photo URL", async function () {
-        const title = "Test Title";
-        const description = "Test Description";
-        const url = "ipfs://some-url";
-        const photo = ""; // Empty photo string
+      const title = "Test Title";
+      const description = "Test Description";
+      const url = "ipfs://some-url";
+      const photo = ""; // Empty photo string
 
-        await expect(educationCenter.addContent(title, description, url, photo))
-            .to.emit(educationCenter, "ContentPublished")
-            .withArgs(1, title, owner.address);
-        
-        const newContent = await educationCenter.contents(1);
-        expect(newContent.photo).to.equal("");
+      await expect(educationCenter.addContent(title, description, url, photo))
+        .to.emit(educationCenter, "ContentPublished")
+        .withArgs(1, title, owner.address);
+
+      const newContent = await educationCenter.contents(1);
+      expect(newContent.photo).to.equal("");
     });
 
     it("Should revert if the title is empty", async function () {
       // We test a failure case: trying to add content with an empty title.
       // We expect the transaction to be reverted with the exact error message from the `require` statement.
-      await expect(
-        educationCenter.addContent("", "Description", "url", "photo")
-      ).to.be.revertedWith("FEC: Title must be between 1 and 49 characters");
+      await expect(educationCenter.addContent("", "Description", "url", "photo")).to.be.revertedWith(
+        "FEC: Title must be between 1 and 49 characters"
+      );
     });
 
     it("Should revert if the URL is empty", async function () {
       // We test another failure case: empty URL.
-      await expect(
-        educationCenter.addContent("Title", "Description", "", "photo")
-      ).to.be.revertedWith("FEC: URL must be between 1 and 199 characters");
+      await expect(educationCenter.addContent("Title", "Description", "", "photo")).to.be.revertedWith(
+        "FEC: URL must be between 1 and 199 characters"
+      );
     });
   });
 
@@ -102,7 +102,7 @@ describe("FreeEducationCenter", function () {
 
     it("getContent() should return the correct content data for a valid ID", async function () {
       const content = await educationCenter.getContent(1);
-      
+
       expect(content.id).to.equal(1);
       expect(content.title).to.equal(title);
       expect(content.description).to.equal(description);
@@ -116,6 +116,136 @@ describe("FreeEducationCenter", function () {
     it("getContent() should revert for a non-existent ID", async function () {
       // Trying to get content with an ID that is out of bounds should fail.
       await expect(educationCenter.getContent(99)).to.be.revertedWith("FEC: Content ID does not exist");
+    });
+  });
+
+  // Test suite for the Voting functionality
+  describe("Voting", function () {
+    let owner, addr1, addr2;
+    const contentId = 1; // ID of the content to be used in tests
+
+    // Hook to run before each test in this suite
+    beforeEach(async function () {
+      // Get signers to be used as different users
+      [owner, addr1, addr2] = await ethers.getSigners();
+
+      // Add a sample content so we can vote on it
+      await educationCenter
+        .connect(owner)
+        .addContent(
+          "Test Title",
+          "A description for the voting test.",
+          "https://example.com/content",
+          "https://example.com/photo"
+        );
+    });
+
+    // --- Tests for the vote() function ---
+    describe("vote()", function () {
+      context("When a user casts a new vote", function () {
+        it("✅ Should allow an upvote and increment the upvotes count", async function () {
+          // Action: addr1 casts an upvote on content with ID 1
+          await educationCenter.connect(addr1).vote(contentId, true);
+
+          const content = await educationCenter.contents(contentId);
+          expect(content.upvotes).to.equal(1);
+          expect(content.downvotes).to.equal(0);
+        });
+
+        it("✅ Should allow a downvote and increment the downvotes count", async function () {
+          // Action: addr1 casts a downvote on content with ID 1
+          await educationCenter.connect(addr1).vote(contentId, false);
+
+          const content = await educationCenter.contents(contentId);
+          expect(content.downvotes).to.equal(1);
+          expect(content.upvotes).to.equal(0);
+        });
+
+        it("📣 Should emit a 'Voted' event when a new vote is cast", async function () {
+          // Check for the 'Voted' event emission with the correct arguments
+          await expect(educationCenter.connect(addr1).vote(contentId, true))
+            .to.emit(educationCenter, "Voted")
+            .withArgs(contentId, addr1.address, 1); // 1 = VoteType.Upvote
+        });
+      });
+
+      context("When a user changes their vote", function () {
+        it("🔄 Should allow changing from an upvote to a downvote, adjusting counts correctly", async function () {
+          // Setup: addr1 first casts an upvote
+          await educationCenter.connect(addr1).vote(contentId, true);
+
+          // Action: addr1 changes their vote to a downvote
+          await educationCenter.connect(addr1).vote(contentId, false);
+
+          const content = await educationCenter.contents(contentId);
+          expect(content.upvotes).to.equal(0);
+          expect(content.downvotes).to.equal(1);
+        });
+
+        it("🔄 Should allow changing from a downvote to an upvote, adjusting counts correctly", async function () {
+          // Setup: addr1 first casts a downvote
+          await educationCenter.connect(addr1).vote(contentId, false);
+
+          // Action: addr1 changes their vote to an upvote
+          await educationCenter.connect(addr1).vote(contentId, true);
+
+          const content = await educationCenter.contents(contentId);
+          expect(content.upvotes).to.equal(1);
+          expect(content.downvotes).to.equal(0);
+        });
+      });
+
+      context("Failure scenarios (reverts)", function () {
+        it("❌ Should revert if the user tries to cast the same vote again", async function () {
+          // Setup: addr1 casts an upvote
+          await educationCenter.connect(addr1).vote(contentId, true);
+
+          // Action: Attempt to upvote again and expect a revert
+          await expect(educationCenter.connect(addr1).vote(contentId, true)).to.be.revertedWith(
+            "FEC: You have already cast this vote"
+          );
+        });
+
+        it("❌ Should revert when trying to vote on non-existent content", async function () {
+          const nonExistentId = 999;
+          await expect(educationCenter.connect(addr1).vote(nonExistentId, true)).to.be.revertedWith(
+            "FEC: Content ID does not exist"
+          );
+        });
+      });
+    });
+
+    // --- Tests for the hasMoreUpvotes() function ---
+    describe("hasMoreUpvotes()", function () {
+      it("👍 Should return 'true' when upvotes are greater than downvotes", async function () {
+        // Setup: Two upvotes
+        await educationCenter.connect(addr1).vote(contentId, true);
+        await educationCenter.connect(addr2).vote(contentId, true);
+
+        expect(await educationCenter.hasMoreUpvotes(contentId)).to.be.true;
+      });
+
+      it("👎 Should return 'false' when downvotes are greater than upvotes", async function () {
+        // Setup: one downvote
+        await educationCenter.connect(addr1).vote(contentId, false);
+
+        expect(await educationCenter.hasMoreUpvotes(contentId)).to.be.false;
+      });
+
+      it("🤝 Should return 'false' when upvotes and downvotes are equal", async function () {
+        // Setup: one upvote and one downvote
+        await educationCenter.connect(addr1).vote(contentId, true);
+        await educationCenter.connect(addr2).vote(contentId, false);
+
+        expect(await educationCenter.hasMoreUpvotes(contentId)).to.be.false;
+      });
+
+      it("❌ Should revert when checking non-existent content", async function () {
+        const nonExistentId = 999;
+        await expect(educationCenter.hasMoreUpvotes(nonExistentId)).to.be.revertedWith(
+          "FEC: Content ID does not exist"
+        );
+      });
     });
   });
 });

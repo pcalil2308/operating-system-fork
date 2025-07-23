@@ -1,10 +1,10 @@
-# Sintrop Core Contracts
-Sintrop OS ImpactApps and core contracts.
+# Sintrop OS Contracts
+Sintrop OperatingSystem native applications and core contracts.
 
 ## Project introduction 
-Main community Operating System and ImpactApps. This repo acts as a smart contract development center and public database for the contracts.
+Main Sintrop's blockchain Operating System contracts. This repo acts as a smart contract development center and public database for the smart contracts.
 
-Any project that helps to impact positevely the environment is welcome here.
+Any project that helps to impact positevely the environment is welcome.
 
 ## Getting Started
 
