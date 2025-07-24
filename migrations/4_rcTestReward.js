@@ -3,10 +3,10 @@ const verifyContract = require("../scripts/shared/verifyContract");
 
 async function rcTestRewardDeploy() {
 
-  constRcTestReward = await ethers.getContractFactory("RcTestReward");
+  const RcTestReward = await ethers.getContractFactory("RcTestReward");
   const durationInBlocks = process.env.RCTEST_REWARD_DURATION_IN_BLOCKS;
 
-  const rcTestReward = awaitRcTestReward.deploy(durationInBlocks);
+  const rcTestReward = await RcTestReward.deploy(durationInBlocks);
 
   saveContractAddress("RcTestReward", rcTestReward.target);
 

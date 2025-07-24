@@ -19,7 +19,7 @@ describe("RcTestReward", function () {
 
     // Get the ContractFactory for our RcTestReward contract
     RcTestReward = await ethers.getContractFactory("RcTestReward");
-    
+
     // Deploy a new instance of the contract, passing the duration as a constructor argument
     rcTestReward = await RcTestReward.deploy(DURATION_IN_BLOCKS);
     // Wait for the deployment transaction to be mined
@@ -71,9 +71,9 @@ describe("RcTestReward", function () {
 
       // Second submission (expected to fail)
       // `expect(...).to.be.revertedWith(...)` asserts that the transaction fails with the specified error message.
-      await expect(
-        rcTestReward.connect(tester1).submitAuditReport(20, "Second report", "hash2")
-      ).to.be.revertedWith("RcTestReward: Report already submitted.");
+      await expect(rcTestReward.connect(tester1).submitAuditReport(20, "Second report", "hash2")).to.be.revertedWith(
+        "RcTestReward: Report already submitted."
+      );
     });
 
     it("Should revert if the testing period has ended", async function () {
@@ -81,9 +81,9 @@ describe("RcTestReward", function () {
       await mine(DURATION_IN_BLOCKS + 1);
 
       // Attempt to submit after the deadline (expected to fail)
-      await expect(
-        rcTestReward.connect(tester1).submitAuditReport(10, "Late report", "hash_late")
-      ).to.be.revertedWith("RcTestReward: Testing period has ended.");
+      await expect(rcTestReward.connect(tester1).submitAuditReport(10, "Late report", "hash_late")).to.be.revertedWith(
+        "RcTestReward: Testing period has ended."
+      );
     });
 
     it("Should revert if transaction count is zero", async function () {
@@ -107,10 +107,10 @@ describe("RcTestReward", function () {
     it("getOwedTokens should calculate the correct potential reward", async function () {
       // tester1 submits a report with 75 transactions
       await rcTestReward.connect(tester1).submitAuditReport(75, "Report for token calculation", "hash_calc");
-      
+
       // The owed amount should be 75 * 100 = 7500
       expect(await rcTestReward.getOwedTokens(tester1.address)).to.equal(7500);
-      
+
       // For a tester who has not submitted, the amount should be 0
       expect(await rcTestReward.getOwedTokens(tester2.address)).to.equal(0);
     });
