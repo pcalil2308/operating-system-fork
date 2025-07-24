@@ -121,13 +121,24 @@ describe("FreeEducationCenter", function () {
 
   // Test suite for the Voting functionality
   describe("Voting", function () {
+    let educationCenter;
     let owner, addr1, addr2;
     const contentId = 1; // ID of the content to be used in tests
+
+    // Enum values mimicking the contract's VoteType
+    const VOTE_TYPE = {
+      None: 0,
+      Upvote: 1,
+      Downvote: 2,
+    };
 
     // Hook to run before each test in this suite
     beforeEach(async function () {
       // Get signers to be used as different users
       [owner, addr1, addr2] = await ethers.getSigners();
+
+      const EducationCenter = await ethers.getContractFactory("FreeEducationCenter");
+      educationCenter = await EducationCenter.deploy();
 
       // Add a sample content so we can vote on it
       await educationCenter
@@ -145,7 +156,7 @@ describe("FreeEducationCenter", function () {
       context("When a user casts a new vote", function () {
         it("✅ Should allow an upvote and increment the upvotes count", async function () {
           // Action: addr1 casts an upvote on content with ID 1
-          await educationCenter.connect(addr1).vote(contentId, true);
+          await educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.Upvote);
 
           const content = await educationCenter.contents(contentId);
           expect(content.upvotes).to.equal(1);
@@ -154,7 +165,7 @@ describe("FreeEducationCenter", function () {
 
         it("✅ Should allow a downvote and increment the downvotes count", async function () {
           // Action: addr1 casts a downvote on content with ID 1
-          await educationCenter.connect(addr1).vote(contentId, false);
+          await educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.Downvote);
 
           const content = await educationCenter.contents(contentId);
           expect(content.downvotes).to.equal(1);
@@ -163,19 +174,19 @@ describe("FreeEducationCenter", function () {
 
         it("📣 Should emit a 'Voted' event when a new vote is cast", async function () {
           // Check for the 'Voted' event emission with the correct arguments
-          await expect(educationCenter.connect(addr1).vote(contentId, true))
+          await expect(educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.Upvote))
             .to.emit(educationCenter, "Voted")
-            .withArgs(contentId, addr1.address, 1); // 1 = VoteType.Upvote
+            .withArgs(contentId, addr1.address, VOTE_TYPE.Upvote);
         });
       });
 
       context("When a user changes their vote", function () {
         it("🔄 Should allow changing from an upvote to a downvote, adjusting counts correctly", async function () {
           // Setup: addr1 first casts an upvote
-          await educationCenter.connect(addr1).vote(contentId, true);
+          await educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.Upvote);
 
           // Action: addr1 changes their vote to a downvote
-          await educationCenter.connect(addr1).vote(contentId, false);
+          await educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.Downvote);
 
           const content = await educationCenter.contents(contentId);
           expect(content.upvotes).to.equal(0);
@@ -184,10 +195,10 @@ describe("FreeEducationCenter", function () {
 
         it("🔄 Should allow changing from a downvote to an upvote, adjusting counts correctly", async function () {
           // Setup: addr1 first casts a downvote
-          await educationCenter.connect(addr1).vote(contentId, false);
+          await educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.Downvote);
 
           // Action: addr1 changes their vote to an upvote
-          await educationCenter.connect(addr1).vote(contentId, true);
+          await educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.Upvote);
 
           const content = await educationCenter.contents(contentId);
           expect(content.upvotes).to.equal(1);
@@ -195,21 +206,36 @@ describe("FreeEducationCenter", function () {
         });
       });
 
-      context("Failure scenarios (reverts)", function () {
-        it("❌ Should revert if the user tries to cast the same vote again", async function () {
+      context("When a user casts the same vote again", function () {
+        it("⚖️ Should not change state or emit an event", async function () {
           // Setup: addr1 casts an upvote
-          await educationCenter.connect(addr1).vote(contentId, true);
+          await educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.Upvote);
+          const contentBefore = await educationCenter.contents(contentId);
 
-          // Action: Attempt to upvote again and expect a revert
-          await expect(educationCenter.connect(addr1).vote(contentId, true)).to.be.revertedWith(
-            "FEC: You have already cast this vote"
+          // Action: Attempt to upvote again and expect no event to be emitted
+          await expect(educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.Upvote)).to.not.emit(
+            educationCenter,
+            "Voted"
+          );
+
+          const contentAfter = await educationCenter.contents(contentId);
+          // Verify that vote counts have not changed
+          expect(contentAfter.upvotes).to.equal(contentBefore.upvotes);
+          expect(contentAfter.downvotes).to.equal(contentBefore.downvotes);
+        });
+      });
+
+      context("Failure scenarios (reverts)", function () {
+        it("❌ Should revert when trying to vote on non-existent content", async function () {
+          const nonExistentId = 999;
+          await expect(educationCenter.connect(addr1).vote(nonExistentId, VOTE_TYPE.Upvote)).to.be.revertedWith(
+            "FEC: Content ID does not exist"
           );
         });
 
-        it("❌ Should revert when trying to vote on non-existent content", async function () {
-          const nonExistentId = 999;
-          await expect(educationCenter.connect(addr1).vote(nonExistentId, true)).to.be.revertedWith(
-            "FEC: Content ID does not exist"
+        it("❌ Should revert if the vote type is invalid (e.g., None)", async function () {
+          await expect(educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.None)).to.be.revertedWith(
+            "FEC: Invalid vote type"
           );
         });
       });
@@ -217,25 +243,26 @@ describe("FreeEducationCenter", function () {
 
     // --- Tests for the hasMoreUpvotes() function ---
     describe("hasMoreUpvotes()", function () {
+      // This function's tests do not need changes as its external behavior is the same.
       it("👍 Should return 'true' when upvotes are greater than downvotes", async function () {
         // Setup: Two upvotes
-        await educationCenter.connect(addr1).vote(contentId, true);
-        await educationCenter.connect(addr2).vote(contentId, true);
+        await educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.Upvote);
+        await educationCenter.connect(addr2).vote(contentId, VOTE_TYPE.Upvote);
 
         expect(await educationCenter.hasMoreUpvotes(contentId)).to.be.true;
       });
 
       it("👎 Should return 'false' when downvotes are greater than upvotes", async function () {
         // Setup: one downvote
-        await educationCenter.connect(addr1).vote(contentId, false);
+        await educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.Downvote);
 
         expect(await educationCenter.hasMoreUpvotes(contentId)).to.be.false;
       });
 
       it("🤝 Should return 'false' when upvotes and downvotes are equal", async function () {
         // Setup: one upvote and one downvote
-        await educationCenter.connect(addr1).vote(contentId, true);
-        await educationCenter.connect(addr2).vote(contentId, false);
+        await educationCenter.connect(addr1).vote(contentId, VOTE_TYPE.Upvote);
+        await educationCenter.connect(addr2).vote(contentId, VOTE_TYPE.Downvote);
 
         expect(await educationCenter.hasMoreUpvotes(contentId)).to.be.false;
       });

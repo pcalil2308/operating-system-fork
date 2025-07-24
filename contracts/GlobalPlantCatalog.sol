@@ -129,35 +129,39 @@ contract GlobalPlantCatalog {
 
   /**
    * @notice Casts a vote on a plant. A user can change their vote.
-   * @dev Updates vote counts based on the user's previous vote.
+   * @dev If a user votes again with a different type, the old vote is removed and the new one is applied.
+   * Voting with the same type again has no effect.
    * @param _plantId The unique ID of the plant to vote on.
-   * @param _isUpvote True for a positive vote (upvote), false for a negative vote (downvote).
+   * @param _voteType The type of vote: `VoteType.Upvote` or `VoteType.Downvote`.
    */
-  function vote(uint256 _plantId, bool _isUpvote) public {
+  function vote(uint256 _plantId, VoteType _voteType) public {
     require(_plantId < nextPlantId, "GPC: Plant ID does not exist");
+    require(_voteType == VoteType.Upvote || _voteType == VoteType.Downvote, "GPC: Invalid vote type");
 
     Plant storage plantToVote = plants[_plantId];
-    VoteType previousVote = userVotes[_plantId][msg.sender];
-    VoteType newVote = _isUpvote ? VoteType.Upvote : VoteType.Downvote;
+    VoteType existingVote = userVotes[_plantId][msg.sender];
 
-    require(previousVote != newVote, "GPC: You have already cast this vote");
+    // Proceed only if the new vote is different from the existing one.
+    if (existingVote != _voteType) {
+      // Revert the previous vote count, if any.
+      if (existingVote == VoteType.Upvote) {
+        plantToVote.upvotes--;
+      } else if (existingVote == VoteType.Downvote) {
+        plantToVote.downvotes--;
+      }
 
-    if (previousVote == VoteType.Downvote && newVote == VoteType.Upvote) {
-      plantToVote.downvotes--;
-      plantToVote.upvotes++;
-    } else if (previousVote == VoteType.Upvote && newVote == VoteType.Downvote) {
-      plantToVote.upvotes--;
-      plantToVote.downvotes++;
-    } else if (previousVote == VoteType.None) {
-      if (newVote == VoteType.Upvote) {
+      // Apply the new vote count.
+      if (_voteType == VoteType.Upvote) {
         plantToVote.upvotes++;
       } else {
+        // _voteType == VoteType.Downvote
         plantToVote.downvotes++;
       }
-    }
 
-    userVotes[_plantId][msg.sender] = newVote;
-    emit Voted(_plantId, msg.sender, newVote);
+      // Store the user's new vote and emit the event.
+      userVotes[_plantId][msg.sender] = _voteType;
+      emit Voted(_plantId, msg.sender, _voteType);
+    }
   }
 
   /**
