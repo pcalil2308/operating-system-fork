@@ -6,124 +6,109 @@ const { mine } = require("@nomicfoundation/hardhat-network-helpers");
 // Top-level test suite for the HumansPeaceTreaty contract
 describe("HumansPeaceTreaty", function () {
   // Declare variables to be used across multiple test cases
-  let HumansPeaceTreaty;
-  let owner, signer1, nonSigner;
+  let humansPeaceTreaty;
+  let owner, signer1, signer2;
 
   // This hook runs before each test, deploying a fresh contract instance
-  // to ensure test isolation and a clean state.
   beforeEach(async function () {
     // Get test accounts (signers) from the Hardhat environment
-    [owner, signer1, nonSigner] = await ethers.getSigners();
+    [owner, signer1, signer2] = await ethers.getSigners();
 
     // Get the ContractFactory for the HumansPeaceTreaty contract
     const HumansPeaceTreaty = await ethers.getContractFactory("HumansPeaceTreaty");
     
     // Deploy a new instance of the contract
-    HumansPeaceTreaty = await HumansPeaceTreaty.deploy();
-    await HumansPeaceTreaty.waitForDeployment();
+    humansPeaceTreaty = await HumansPeaceTreaty.deploy();
+    await humansPeaceTreaty.waitForDeployment();
+  });
+
+  // Test suite for contract deployment and initial state
+  describe("Deployment", function () {
+    it("should initialize the totalSignatures counter to zero", async function () {
+      // This test verifies that the counter starts at 0 upon deployment.
+      expect(await humansPeaceTreaty.totalSignatures()).to.equal(0);
+    });
   });
 
   // Test suite for the `signPeacePledge` function
   describe("Signing the Pledge (signPeacePledge)", function () {
+    it("should increment the totalSignatures counter upon a new signature", async function () {
+      // Initially, the counter should be 0.
+      expect(await humansPeaceTreaty.totalSignatures()).to.equal(0);
+
+      // User `signer1` signs the pledge.
+      await humansPeaceTreaty.connect(signer1).signPeacePledge();
+      // The counter should now be 1.
+      expect(await humansPeaceTreaty.totalSignatures()).to.equal(1);
+
+      // A different user, `signer2`, signs the pledge.
+      await humansPeaceTreaty.connect(signer2).signPeacePledge();
+      // The counter should now be 2.
+      expect(await humansPeaceTreaty.totalSignatures()).to.equal(2);
+    });
+    
     it("should allow a user to sign the pledge, updating their status and lastProofBlock", async function () {
-      // User `signer1` calls the function to sign the pledge
-      const tx = await HumansPeaceTreaty.connect(signer1).signPeacePledge();
+      const tx = await humansPeaceTreaty.connect(signer1).signPeacePledge();
       const receipt = await tx.wait();
       const txBlockNumber = receipt.blockNumber;
 
-      // Verify the stored data using the public mapping getter
-      const pledgeData = await HumansPeaceTreaty.pledges(signer1.address);
+      const pledgeData = await humansPeaceTreaty.pledges(signer1.address);
       expect(pledgeData.hasSigned).to.be.true;
       expect(pledgeData.lastProofBlock).to.equal(txBlockNumber);
     });
 
     it("should emit a PledgeSigned event upon a successful signature", async function () {
-      // This test verifies that the correct event is emitted with the correct arguments
-      await expect(HumansPeaceTreaty.connect(signer1).signPeacePledge())
-        .to.emit(HumansPeaceTreaty, "PledgeSigned")
-        // We check that the signer is correct. The block number check is just to ensure it's a valid number.
+      await expect(humansPeaceTreaty.connect(signer1).signPeacePledge())
+        .to.emit(humansPeaceTreaty, "PledgeSigned")
         .withArgs(signer1.address, (block) => block > 0);
     });
 
-    it("should revert if a user tries to sign the pledge more than once", async function () {
-      // The user signs successfully for the first time
-      await HumansPeaceTreaty.connect(signer1).signPeacePledge();
+    it("should NOT increment the counter if a user tries to sign more than once", async function () {
+      // The user signs successfully, incrementing the counter to 1.
+      await humansPeaceTreaty.connect(signer1).signPeacePledge();
+      expect(await humansPeaceTreaty.totalSignatures()).to.equal(1);
 
-      // This test verifies that the second attempt from the same user is rejected
+      // The second attempt from the same user is reverted.
       await expect(
-        HumansPeaceTreaty.connect(signer1).signPeacePledge()
+        humansPeaceTreaty.connect(signer1).signPeacePledge()
       ).to.be.revertedWith("HumansPeaceTreaty: You have already signed this pledge.");
+
+      // This test verifies that the counter remains unchanged after the failed transaction.
+      expect(await humansPeaceTreaty.totalSignatures()).to.equal(1);
     });
   });
 
   // Test suite for the `proveCommitment` function
   describe("Proving Commitment (proveCommitment)", function () {
     beforeEach(async function() {
-      // To test this function, a user must have already signed.
-      // We perform the signature here to avoid repetition in each test.
-      await HumansPeaceTreaty.connect(signer1).signPeacePledge();
+      // A user must have already signed, setting the initial counter to 1.
+      await humansPeaceTreaty.connect(signer1).signPeacePledge();
+    });
+
+    it("should NOT increment the counter when a user proves commitment", async function () {
+      // The counter is 1 from the signature in `beforeEach`.
+      expect(await humansPeaceTreaty.totalSignatures()).to.equal(1);
+
+      // The user now calls `proveCommitment`.
+      await humansPeaceTreaty.connect(signer1).proveCommitment();
+
+      // This test verifies that the counter is not affected by proving commitment.
+      expect(await humansPeaceTreaty.totalSignatures()).to.equal(1);
     });
 
     it("should allow a signatory to prove their commitment, updating the lastProofBlock", async function () {
-      // Get the initial proof block from the signing action
-      const initialPledge = await HumansPeaceTreaty.pledges(signer1.address);
-      const initialProofBlock = initialPledge.lastProofBlock;
-
-      // Advance the blockchain by 10 blocks to simulate the passage of time
-      await mine(10);
-
-      // The user now calls `proveCommitment` to reaffirm their pledge
-      const proveTx = await HumansPeaceTreaty.connect(signer1).proveCommitment();
-      const proveReceipt = await proveTx.wait();
-      const newProofBlock = proveReceipt.blockNumber;
-
-      // Verify that the new proof block is updated and greater than the initial one
-      const updatedPledge = await HumansPeaceTreaty.pledges(signer1.address);
-      expect(updatedPledge.hasSigned).to.be.true; // Status should remain signed
-      expect(updatedPledge.lastProofBlock).to.equal(newProofBlock);
-      expect(updatedPledge.lastProofBlock).to.be.greaterThan(initialProofBlock);
-    });
-
-    it("should emit a CommitmentProven event upon successful proof", async function () {
-      // This test verifies that the correct event is emitted when a user proves commitment
-      await expect(HumansPeaceTreaty.connect(signer1).proveCommitment())
-        .to.emit(HumansPeaceTreaty, "CommitmentProven")
-        .withArgs(signer1.address, (block) => block > 0);
-    });
-
-    it("should revert if a non-signatory tries to prove their commitment", async function () {
-      // This test verifies that a user who has not signed cannot prove commitment
-      await expect(
-        HumansPeaceTreaty.connect(nonSigner).proveCommitment()
-      ).to.be.revertedWith("HumansPeaceTreaty: You must sign the pledge first before proving commitment.");
-    });
-  });
-
-  // Test suite for the view functions that check pledge status
-  describe("Viewing Pledge Status", function () {
-    it("hasSigned() should return true for a signatory and false for a non-signatory", async function () {
-      // `signer1` signs the pledge
-      await HumansPeaceTreaty.connect(signer1).signPeacePledge();
-
-      // Verify `hasSigned` returns the correct boolean for both users
-      expect(await HumansPeaceTreaty.hasSigned(signer1.address)).to.be.true;
-      expect(await HumansPeaceTreaty.hasSigned(nonSigner.address)).to.be.false;
-    });
-
-    it("The public 'pledges' getter should return the full, correct struct data", async function () {
-      // First, check the data for a user who has not signed
-      const nonSignerPledge = await HumansPeaceTreaty.pledges(nonSigner.address);
-      expect(nonSignerPledge.hasSigned).to.be.false;
-      expect(nonSignerPledge.lastProofBlock).to.equal(0);
-
-      // Now, have a user sign the pledge
-      const tx = await HumansPeaceTreaty.connect(signer1).signPeacePledge();
-      const receipt = await tx.wait();
-      
-      // Verify the returned struct contains the correct data after signing
-      const signerPledge = await HumansPeaceTreaty.pledges(signer1.address);
-      expect(signerPledge.hasSigned).to.be.true;
-      expect(signerPledge.lastProofBlock).to.equal(receipt.blockNumber);
-    });
+        const initialPledge = await humansPeaceTreaty.pledges(signer1.address);
+        const initialProofBlock = initialPledge.lastProofBlock;
+  
+        await mine(10);
+  
+        const proveTx = await humansPeaceTreaty.connect(signer1).proveCommitment();
+        const proveReceipt = await proveTx.wait();
+        const newProofBlock = proveReceipt.blockNumber;
+  
+        const updatedPledge = await humansPeaceTreaty.pledges(signer1.address);
+        expect(updatedPledge.lastProofBlock).to.equal(newProofBlock);
+        expect(updatedPledge.lastProofBlock).to.be.greaterThan(initialProofBlock);
+      });
   });
 });

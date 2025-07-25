@@ -3,7 +3,9 @@ pragma solidity ^0.8.20;
 
 /**
  * @title HumansPeaceTreaty
- * @dev This contract allows individuals to digitally sign a public pledge for peace
+ * @notice Enough violence. Enough war. We want peace! 
+ * Sign this pledge if you agree on this Humans Peace Treaty and demand commitment to peace from others. 
+ * @dev This contract allows individuals to digitally sign a public pledge/promise for peace
  * and to periodically prove their ongoing commitment. It acts as an immutable ledger
  * of peace commitments.
  */
@@ -40,7 +42,7 @@ contract HumansPeaceTreaty {
   /**
    * @dev A public mapping from an address to their Signature data.
    */
-  mapping(address => Signature) private pledges;
+  mapping(address => Signature) public pledges;
 
   /**
    * @dev A public counter for the total number of unique addresses that
