@@ -20,8 +20,8 @@ contract WhitepaperCenter {
 
   // --- Structs ---
 
-  /// @notice Represents a single educational whitepaper entry within the Free Education Center.
-  /// @dev Each whitepaper piece includes metadata, links to the actual whitepaper, and vote counts.
+  /// @notice Represents a single whitepaper publication.
+  /// @dev Each whitepaper piece includes metadata, links to the actual whitepaper.
   struct Whitepaper {
     uint256 id; ///< @notice The unique identifier for this whitepaper entry.
     string title; ///< @notice The title of the paper.
@@ -40,7 +40,7 @@ contract WhitepaperCenter {
   // --- Public Functions ---
 
   /**
-   * @notice Publishes a new educational whitepaper entry to the Free Education Center.
+   * @notice Publishes a new whitepaper to the Sintrop ImpactChain if you are aiming to launch a new project on top of the network.
    * @dev Increments the `whitepapersCount` to generate a new unique ID, stores the whitepaper details,
    * and emits a `WhitepaperPublished` event for off-chain indexing.
    * Basic input validation is included to ensure whitepaper is not empty and respects length limits.
