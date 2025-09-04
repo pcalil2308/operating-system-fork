@@ -137,6 +137,7 @@ contract FreeEducationCenter {
 
   /**
    * @notice Checks if a piece of content has more positive votes than negative votes.
+   * @dev This function can be used in front-end applications to only display positive contents. 
    * @param _id The unique ID of the content to check.
    * @return bool True if upvotes are strictly greater than downvotes, false otherwise.
    */
