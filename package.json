@@ -6,9 +6,7 @@
   "scripts": {
     "test": "npx hardhat test --bail",
     "deploy:localhost": "npx hardhat run --network localhost scripts/deploy.js",
-    "deploy:sepolia": "npx hardhat run --network sepolia scripts/deploy.js",
-    "deploy:zkevm": "npx hardhat run --network zkevm scripts/deploy.js",
-    "deploy:holesky": "npx hardhat run --network holesky scripts/deploy.js",
+    "deploy:mainnet": "npx hardhat run --network mainnet scripts/deploy.js",    
     "deploy:sequoia:testnet": "npx hardhat run --network sequoiaTestnet scripts/deploy.js",
     "coverage": "npx hardhat coverage",
     "generate:docs": "npx solidity-docgen --solc-module solc",

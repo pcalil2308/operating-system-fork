@@ -3,7 +3,6 @@ require("@nomicfoundation/hardhat-verify");
 require("solidity-coverage");
 require("dotenv").config({ path: __dirname + "/.env" });
 
-const infuraKey = process.env.INFURA_API_KEY;
 const privateKey = process.env.PRIVATE_KEY_ACCOUNT_TO_DEPLOY || "set private key";
 const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
 const coinMarketcapApiKey = process.env.COINMARKETCAP_API_KEY;
@@ -23,40 +22,13 @@ module.exports = {
       allowUnlimitedContractSize: true,
     },
     // mainnet: {
-    //   url: `https://infura.io/v3/${infuraKey}`,
-    //   accounts: [privateKey],
-    // },
-    // sepolia: {
-    //   url: `https://sepolia.infura.io/v3/${infuraKey}`,
-    //   accounts: [privateKey],
-    // },
-    // zkevm: {
-    //   url: `https://rpc.public.zkevm-test.net`,
-    //   accounts: [privateKey],
-    // },
-    // holesky: {
-    //   url: `https://rpc.holesky.ethpandaops.io`,
+    //   url: "https://rpc.sintrop.com",
     //   accounts: [privateKey],
     // },
     // sequoiaTestnet: {
     //   url: "https://sequoiarpc.sintrop.com",
     //   accounts: [privateKey],
     // }
-  },
-  etherscan: {
-    apiKey: {
-      "sequoiaTestnet": "empty"
-    },
-    customChains: [
-      {
-        network: "sequoiaTestnet",
-        chainId: 1600,
-        urls: {
-          apiURL: "https://sequoiaapi.sintrop.com/api",
-          browserURL: "https://sequoiaapi.sintrop.com:5000"
-        }
-      }
-    ]
   },
   sourcify: {
     enabled: false,
