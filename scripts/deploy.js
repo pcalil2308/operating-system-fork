@@ -50,16 +50,15 @@ function showDeployedAddress() {
 async function main() {
   await startDeployAlert();
 
-  await educationCenterDeploy();
-  await sintropAppStoreDeploy();
-  await globalPlantCatalogDeploy();
-  // await rcTestRewardDeploy();
-  await humansPeaceTreatyDeploy();
-  await whitepaperDeploy();
+  // await educationCenterDeploy();
+  // await sintropAppStoreDeploy();
+  // await globalPlantCatalogDeploy();
+  // await humansPeaceTreatyDeploy();
+  // await whitepaperDeploy();
 
 //  await afterDeploy();
 
-  showDeployedAddress();
+  // showDeployedAddress();
 }
 // We recommend this pattern to be able to use async/await everywhere
 // and properly handle errors.

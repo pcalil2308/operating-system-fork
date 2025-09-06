@@ -106,6 +106,12 @@ contract GlobalPlantCatalog {
     string memory _description,
     string calldata _photoHash
   ) public {
+    require(bytes(_popularName).length > 0 && bytes(_popularName).length < 50, "String must be between 1 and 49 characters");
+    require(bytes(_scientificName).length > 0 && bytes(_scientificName).length < 100, "String must be between 1 and 99 characters");
+    require(bytes(_taxonomy).length > 0 && bytes(_taxonomy).length < 300, "String must be between 1 and 299 characters");
+    require(bytes(_description).length > 0 && bytes(_description).length < 300, "String must be between 1 and 299 characters");
+    require(bytes(_photoHash).length > 0 && bytes(_photoHash).length < 150, "String must be between 1 and 149 characters");
+
     uint256 currentId = nextPlantId;
 
     // Create and store the new Plant struct, initializing votes to zero
