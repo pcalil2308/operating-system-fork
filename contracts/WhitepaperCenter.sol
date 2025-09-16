@@ -73,7 +73,7 @@ contract WhitepaperCenter {
     string memory _url
   ) public {
     // Input validation for string lengths and non-empty fields.
-    require(bytes(_title).length > 0 && bytes(_title).length < 50, "Title must be between 1 and 49 characters");
+    require(bytes(_title).length > 0 && bytes(_title).length < 150, "Title must be between 1 and 149 characters");
     require(
       bytes(_description).length > 0 && bytes(_description).length < 500,
       "Description must be between 1 and 499 characters"

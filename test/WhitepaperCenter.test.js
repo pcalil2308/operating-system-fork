@@ -60,7 +60,7 @@ describe("WhitepaperCenter", function () {
       // We test a failure case: trying to add whitepaper with an empty title.
       // We expect the transaction to be reverted with the exact error message from the `require` statement.
       await expect(whitepaperCenter.addWhitepaper("", "Description", "url")).to.be.revertedWith(
-        "Title must be between 1 and 49 characters"
+        "Title must be between 1 and 149 characters"
       );
     });
 
